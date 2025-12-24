@@ -7,7 +7,6 @@ import {
   Trash2,
   Save,
   Download,
-  Sparkles,
 } from "lucide-react";
 import AssetList from "./AssetList";
 
@@ -60,23 +59,6 @@ const Toolbar: FC<ToolbarProps> = ({
       {/* 🔽 Scrollable section */}
       {/* This will now work as expected because the parent's height is correctly constrained. */}
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
-        {/* ✨ AI Suggestions */}
-        <div className="rounded-2xl bg-gray-800 p-4 shadow-md">
-          <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-indigo-400">
-            <Sparkles className="h-5 w-5" /> AI Suggestions
-          </h3>
-          <div className="space-y-2 text-sm">
-            <button className="w-full rounded-md bg-indigo-600 px-3 py-2 hover:bg-indigo-700">
-              Modern Living Room Set
-            </button>
-            <button className="w-full rounded-md bg-indigo-600 px-3 py-2 hover:bg-indigo-700">
-              Minimal Workspace
-            </button>
-            <button className="w-full rounded-md bg-indigo-600 px-3 py-2 hover:bg-indigo-700">
-              Cozy Bedroom Setup
-            </button>
-          </div>
-        </div>
 
         {/* ➕ Add Section */}
         <div className="rounded-2xl bg-gray-800 p-4 shadow-md">

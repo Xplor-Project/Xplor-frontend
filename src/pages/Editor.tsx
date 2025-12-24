@@ -12,7 +12,6 @@ import type {
   TransformField,
 } from "../types/scene";
 import Navbar from "../components/Editor/Navbar";
-import AssetList from "../components/Editor/AssetList";
 import LightsFromObjects from "../components/Editor/LightsFromObjects";
 
 // --- Utility ---
@@ -71,6 +70,9 @@ export default function EditorPage() {
       url,
       (gltf: any) => {
         const root = gltf.scene.clone(true);
+        const animations = gltf.animations?.map((a: THREE.AnimationClip) =>
+          a.clone()
+        );
         let added = false;
         // If root is a group and has children, add each child as a separate object
         if (root.children && root.children.length > 0) {
@@ -88,6 +90,7 @@ export default function EditorPage() {
                   id: generateId(),
                   name: child.name || file.name,
                   object3d: child,
+                  
                 },
               ]);
               added = true;
@@ -98,7 +101,7 @@ export default function EditorPage() {
         if (!added) {
           root.traverse((child: any) => {
             if (child.isMesh) {
-              child.castShadow = true;
+              child.castShadow = false;
               child.receiveShadow = true;
             }
           });
@@ -108,6 +111,7 @@ export default function EditorPage() {
               id: generateId(),
               name: file.name,
               object3d: root,
+              animations,
             },
           ]);
         }
@@ -128,51 +132,55 @@ export default function EditorPage() {
   };
 
   const addLight = () => {
-  const geometry = new THREE.SphereGeometry(0.2, 16, 16);
-  const material = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    emissive: 0xffffee,
-    emissiveIntensity: 2.5,
-    roughness: 0.3,
-    metalness: 0.0,
-  });
+    const geometry = new THREE.SphereGeometry(0.2, 16, 16);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffee,
+      emissiveIntensity: 2.5,
+      roughness: 0.3,
+      metalness: 0.0,
+    });
 
-  const bulb = new THREE.Mesh(geometry, material);
-  bulb.name = "Light Bulb";
-  bulb.position.set(0, 1.2, 0);
+    const bulb = new THREE.Mesh(geometry, material);
+    bulb.name = "Light Bulb";
+    bulb.position.set(0, 1.2, 0);
 
-  // Mark as a light source for LightsFromObjects
-  bulb.userData.isLight = true;
-  bulb.userData.lightColor = 0xfff2cc;
-  bulb.userData.intensity = 3;  // brighter than cube lamp earlier
-  bulb.userData.distance = 7;
-  bulb.userData.decay = 1.2;
-  bulb.userData.offset = [0, 0, 0];
+    // 🔴 VERY IMPORTANT
+    bulb.castShadow = false;
+    bulb.receiveShadow = false;
 
-  const newObj: SceneObject = {
-    id: generateId(),
-    name: "Light",
-    object3d: bulb,
+    bulb.userData.isLight = true;
+    bulb.userData.lightColor = 0xfff2cc;
+    bulb.userData.intensity = 3;
+    bulb.userData.distance = 10;
+    bulb.userData.decay = 2;
+    bulb.userData.offset = [0, 0.15, 0];
+
+    setObjects((prev) => [
+      ...prev,
+      {
+        id: generateId(),
+        name: "Light",
+        object3d: bulb,
+      },
+    ]);
   };
-
-  setObjects((prev) => [...prev, newObj]);
-};
 
   const addCube = () => {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
-  const material = new THREE.MeshStandardMaterial({ color: 0x8aaaff });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.name = "Cube";
-  mesh.position.set(Math.random() * 2 - 1, 0.5, Math.random() * 2 - 1);
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const material = new THREE.MeshStandardMaterial({ color: 0x8aaaff });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = "Cube";
+    mesh.position.set(Math.random() * 2 - 1, 0.5, Math.random() * 2 - 1);
 
-  const newObj: SceneObject = {
-    id: generateId(),
-    name: "Cube",
-    object3d: mesh,
+    const newObj: SceneObject = {
+      id: generateId(),
+      name: "Cube",
+      object3d: mesh,
+    };
+
+    setObjects((prev) => [...prev, newObj]);
   };
-
-  setObjects((prev) => [...prev, newObj]);
-};
 
   const addSphere = () => {
     const geometry = new THREE.SphereGeometry(0.5, 32, 32);
@@ -182,7 +190,6 @@ export default function EditorPage() {
     mesh.position.set(Math.random() * 2 - 1, 0.5, Math.random() * 2 - 1);
     addObject(mesh);
   };
-
 
   const deleteSelected = () => {
     if (!selectedId) return;
@@ -207,27 +214,39 @@ export default function EditorPage() {
   }, [selectedId, historyIndex, history]);
 
   const exportGLTF = () => {
-    const exporter = new GLTFExporter();
-    const sceneToExport = new THREE.Scene();
+  const exporter = new GLTFExporter();
+  const sceneToExport = new THREE.Scene();
 
-    objectsRef.current.forEach((o) =>
-      sceneToExport.add(o.object3d.clone(true))
-    );
+  const animations: THREE.AnimationClip[] = [];
 
-    exporter.parse(
-      sceneToExport,
-      (result) => {
-        const output = JSON.stringify(result, null, 2);
-        const blob = new Blob([output], { type: "application/json" });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.download = `scene-${Date.now()}.gltf`;
-        link.click();
-      },
-      (error) => console.error("GLTF export error", error),
-      { binary: false } // ✅ glTF JSON
-    );
-  };
+  objectsRef.current.forEach((o) => {
+    const cloned = o.object3d.clone(true);
+    sceneToExport.add(cloned);
+
+    // ✅ collect animations (but do not play)
+    if (o.animations?.length) {
+      animations.push(...o.animations.map((a) => a.clone()));
+    }
+  });
+
+  exporter.parse(
+    sceneToExport,
+    (result) => {
+      const output = JSON.stringify(result, null, 2);
+      const blob = new Blob([output], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `scene-${Date.now()}.gltf`;
+      link.click();
+    },
+    (error) => console.error("GLTF export error", error),
+    {
+      binary: false,
+      animations, // ✅ THIS preserves animation
+    }
+  );
+};
+
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFilename, setExportFilename] = useState("");
@@ -242,28 +261,44 @@ export default function EditorPage() {
   };
 
   const handleExportModalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const exporter = new GLTFExporter();
-    const sceneToExport = new THREE.Scene();
-    objectsRef.current.forEach((o) =>
-      sceneToExport.add(o.object3d.clone(true))
-    );
-    exporter.parse(
-      sceneToExport,
-      (result) => {
-        if (result instanceof ArrayBuffer) {
-          const blob = new Blob([result], { type: "application/octet-stream" });
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = `${exportFilename || "scene"}.glb`;
-          link.click();
-        }
-      },
-      (error) => console.error("GLB export error", error),
-      { binary: true }
-    );
-    handleExportModalClose();
-  };
+  e.preventDefault();
+
+  const exporter = new GLTFExporter();
+  const sceneToExport = new THREE.Scene();
+
+  const animations: THREE.AnimationClip[] = [];
+
+  objectsRef.current.forEach((o) => {
+    const cloned = o.object3d.clone(true);
+    sceneToExport.add(cloned);
+
+    if (o.animations?.length) {
+      animations.push(...o.animations.map((a) => a.clone()));
+    }
+  });
+
+  exporter.parse(
+    sceneToExport,
+    (result) => {
+      if (result instanceof ArrayBuffer) {
+        const blob = new Blob([result], {
+          type: "application/octet-stream",
+        });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `${exportFilename || "scene"}.glb`;
+        link.click();
+      }
+    },
+    (error) => console.error("GLB export error", error),
+    {
+      binary: true,
+      animations, 
+    }
+  );
+
+  handleExportModalClose();
+};
 
   const saveToBackend = async () => {
     const exporter = new GLTFExporter();
@@ -389,44 +424,44 @@ export default function EditorPage() {
   };
 
   // --- Light Intensity Update ---
-const updateLightIntensity = (id: string, intensity: number) => {
-  setObjects((prev) =>
-    prev.map((o) => {
-      if (o.id === id) {
-        const newObject3d = o.object3d.clone(true);
+  const updateLightIntensity = (id: string, intensity: number) => {
+    setObjects((prev) =>
+      prev.map((o) => {
+        if (o.id === id) {
+          const newObject3d = o.object3d.clone(true);
 
-        newObject3d.userData = {
-          ...(newObject3d.userData || {}),
-          intensity,
-        };
+          newObject3d.userData = {
+            ...(newObject3d.userData || {}),
+            intensity,
+          };
 
-        return { ...o, object3d: newObject3d };
-      }
-      return o;
-    })
-  );
-};
+          return { ...o, object3d: newObject3d };
+        }
+        return o;
+      })
+    );
+  };
 
-// --- Light Color Update ---
-const updateLightColor = (id: string, hexColor: number) => {
-  setObjects((prev) =>
-    prev.map((o) => {
-      if (o.id === id) {
-        const newObject3d = o.object3d.clone(true);
+  // --- Light Color Update ---
+  const updateLightColor = (id: string, hexColor: number) => {
+    setObjects((prev) =>
+      prev.map((o) => {
+        if (o.id === id) {
+          const newObject3d = o.object3d.clone(true);
 
-        newObject3d.userData = {
-          ...(newObject3d.userData || {}),
-          lightColor: hexColor,
-        };
+          newObject3d.userData = {
+            ...(newObject3d.userData || {}),
+            lightColor: hexColor,
+          };
 
-        return { ...o, object3d: newObject3d };
-      }
-      return o;
-    })
-  );
-};
+          return { ...o, object3d: newObject3d };
+        }
+        return o;
+      })
+    );
+  };
 
-// Update object's texture (diffuse map). If `file` is null it will remove any existing map.
+  // Update object's texture (diffuse map). If `file` is null it will remove any existing map.
   const updateObjectTexture = (id: string, file: File | null) => {
     if (!file) {
       // Remove texture maps synchronously
@@ -564,7 +599,9 @@ const updateLightColor = (id: string, hexColor: number) => {
         }
         // If nothing was added, add the root itself
         if (!added) {
-          console.log("Root has no children or no meshes/groups were found, adding root itself.");
+          console.log(
+            "Root has no children or no meshes/groups were found, adding root itself."
+          );
           root.traverse((child: any) => {
             if (child.isMesh) {
               child.castShadow = true;
@@ -581,7 +618,7 @@ const updateLightColor = (id: string, hexColor: number) => {
         }
       },
       (xhr) => {
-        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
       },
       (err: any) => console.error("GLTF load error", err)
     );
@@ -678,7 +715,7 @@ const updateLightColor = (id: string, hexColor: number) => {
             <directionalLight
               position={[10, 10, 5]}
               intensity={1.5}
-              castShadow
+              castShadow={false}
             />
             <gridHelper args={[gridWidth, gridLength]} />
 

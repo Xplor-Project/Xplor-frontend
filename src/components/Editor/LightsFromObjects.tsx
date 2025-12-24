@@ -9,23 +9,28 @@ export default function LightsFromObjects({ objects }: LightsFromObjectsProps) {
   const tmpCenter = new THREE.Vector3();
   const tmpBox = new THREE.Box3();
 
+  // 🔧 Toggle this later for Preview / Render mode
+  const ENABLE_SHADOWS = true;
+
   return (
     <>
       {objects.map((o) => {
         const isLamp =
           /lamp|light/i.test(o.name) || o.object3d.userData?.isLight;
+
         if (!isLamp) return null;
 
-        // Light properties (can be edited later through a UI)
         const color = o.object3d.userData?.lightColor ?? 0xfff2cc;
         const intensity = o.object3d.userData?.intensity ?? 2;
-        const distance = o.object3d.userData?.distance ?? 6;
-        const decay = o.object3d.userData?.decay ?? 1.5;
-        const offset: [number, number, number] =
-          o.object3d.userData?.offset ?? [0, 0.5, 0];
+        const distance = o.object3d.userData?.distance ?? 10;
+        const decay = o.object3d.userData?.decay ?? 2;
 
-        // Position light at object center:
+        const offset: [number, number, number] =
+          o.object3d.userData?.offset ?? [0, 0.15, 0];
+
+        // Get object center
         tmpBox.setFromObject(o.object3d).getCenter(tmpCenter);
+
         const pos: [number, number, number] = [
           tmpCenter.x + offset[0],
           tmpCenter.y + offset[1],
@@ -40,7 +45,14 @@ export default function LightsFromObjects({ objects }: LightsFromObjectsProps) {
             intensity={intensity}
             distance={distance}
             decay={decay}
-            castShadow
+            castShadow={ENABLE_SHADOWS}
+            {...(ENABLE_SHADOWS
+              ? {
+                  "shadow-bias": -0.0015,
+                  "shadow-normalBias": 0.04,
+                  "shadow-mapSize": [1024, 1024],
+                }
+              : {})}
           />
         );
       })}

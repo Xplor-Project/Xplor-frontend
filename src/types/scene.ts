@@ -4,6 +4,8 @@ export type SceneObject = {
   id: string;
   name: string;
   object3d: THREE.Object3D;
+
+  animations?: THREE.AnimationClip[];
 };
 
 
