@@ -27,7 +27,7 @@ export default function AssetList({ onImport }: AssetListProps) {
   useEffect(() => {
     const fetchAssets = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/assets");
+        const response = await fetch("https://xplor-backend-production.up.railway.app/assets");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
