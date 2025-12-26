@@ -1,5 +1,7 @@
 // src/pages/Home.tsx
 
+import { Link } from "react-router-dom";
+
 
 const Home = () => (
   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-800 via-gray-900 to-gray-950 text-white relative overflow-hidden">
@@ -14,18 +16,19 @@ const Home = () => (
         <p className="text-lg text-white mb-6 animate-fadein delay-100">A powerful platform to explore and manage your journey.</p>
         <hr className="border-white/20 w-2/3 mb-8 animate-fadein delay-200" />
         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center animate-fadein delay-300">
-          <a
-            href="/login"
+          <Link
+            to="/dashboard"
             className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold shadow-lg hover:scale-105 hover:from-blue-600 hover:to-blue-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
+            >
             Login
-          </a>
-          <a
-            href="http://localhost:8000/auth/login/google-oauth2/"
+          </Link>
+          <Link
+            to="/dashboard"
+            // to="http://localhost:8000/auth/login/google-oauth2/"
             className="w-full sm:w-auto px-8 py-3 rounded-xl border-2 border-white/30 text-white font-bold shadow-lg bg-white/10 hover:bg-gradient-to-r hover:from-blue-400 hover:to-blue-700 hover:text-white hover:border-transparent hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             Continue with Google
-          </a>
+          </Link>
         </div>
       </div>
     </div>
