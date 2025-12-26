@@ -22,7 +22,7 @@ export default function AssetList() {const [assets, setAssets] = useState<Asset[
   useEffect(() => {
     const fetchAssets = async () => {
       try {
-        const response = await fetch("https://xplor-backend-production.up.railway.app/assets");
+        const response = await fetch("https://xplor-backend-production.up.railway.app/assets/");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
