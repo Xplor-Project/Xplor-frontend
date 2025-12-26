@@ -15,12 +15,7 @@ interface Asset {
   thumbnail_key: string;
 }
 
-type AssetListProps = {
-  onImport: (url: string) => void;
-};
-
-export default function AssetList({ onImport }: AssetListProps) {
-  const [assets, setAssets] = useState<Asset[]>([]);
+export default function AssetList() {const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

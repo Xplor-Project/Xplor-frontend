@@ -17,7 +17,7 @@ type ToolbarProps = {
   handleFile: (file: File | null) => Promise<void>;
   deleteSelected: () => void;
   exportGLTF: () => void;
-  exportGLB: () => void; 
+  exportGLB: () => void;
   saveToBackend: () => Promise<void>;
   selectedId: string | null;
   onImportFromUrl: (url: string) => void;
@@ -32,7 +32,6 @@ const Toolbar: FC<ToolbarProps> = ({
   exportGLB,
   saveToBackend,
   selectedId,
-  onImportFromUrl,
 }) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -106,7 +105,7 @@ const Toolbar: FC<ToolbarProps> = ({
           <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-teal-400">
             <Box className="h-5 w-5" /> Assets
           </h3>
-          <AssetList onImport={onImportFromUrl} />
+          <AssetList />
         </div>
 
         {/* 📝 Edit Section */}
@@ -117,11 +116,10 @@ const Toolbar: FC<ToolbarProps> = ({
           <button
             onClick={deleteSelected}
             disabled={!selectedId}
-            className={`w-full flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm ${
-              selectedId
+            className={`w-full flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm ${selectedId
                 ? "bg-red-600 hover:bg-red-700"
                 : "bg-gray-700 text-gray-400 cursor-not-allowed"
-            }`}
+              }`}
           >
             <Trash2 className="h-4 w-4" /> Delete Selected
           </button>
