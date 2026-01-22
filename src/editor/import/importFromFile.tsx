@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { GLTFLoader } from "three-stdlib";
 import type { SceneObject } from "../../types/scene";
 import { groundObject } from "../utils"

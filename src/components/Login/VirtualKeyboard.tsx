@@ -6,7 +6,6 @@ interface VirtualKeyboardProps {
 }
 
 export default function VirtualKeyboard({
-  value,
   onChange,
 }: VirtualKeyboardProps) {
   return (

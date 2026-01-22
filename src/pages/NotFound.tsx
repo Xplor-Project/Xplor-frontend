@@ -9,7 +9,7 @@ const NotFound = () => (
     </div>
     <div className="relative z-10 w-full max-w-lg mx-auto">
       <div className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl px-10 py-16 flex flex-col items-center">
-        <h1 className="text-7xl font-extrabold mb-4 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text text-transparent drop-shadow-lg animate-fadein text-white">404</h1>
+        <h1 className="text-7xl font-extrabold mb-4 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-700 bg-clip-text drop-shadow-lg animate-fadein text-white">404</h1>
         <p className="text-2xl text-white mb-6 animate-fadein delay-100">Page Not Found</p>
         <a href="/" className="mt-4 px-8 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold shadow-lg hover:scale-105 hover:from-gray-900 hover:to-gray-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 animate-fadein delay-200">Go Home</a>
       </div>
