@@ -18,7 +18,7 @@ type ToolbarProps = {
   deleteSelected: () => void;
   exportGLTF: () => void;
   exportGLB: () => void;
-  saveToBackend: () => Promise<void>;
+  saveToBackend: () =>void;
   selectedId: string | null;
   onImportFromUrl: (url: string) => void;
 };
