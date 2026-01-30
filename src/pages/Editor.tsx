@@ -70,12 +70,10 @@ export default function EditorPage() {
   useKeyboardShortcuts({
     onUndo: history.undo,
     onRedo: history.redo,
-
     onDelete: () => {
       scene.setObjects((prev) => deleteObject(prev, scene.selectedId));
       scene.setSelectedId(null);
     },
-
     onMoveObject: (direction, e) => {
       if (!scene.selectedId) return;
 
@@ -86,30 +84,18 @@ export default function EditorPage() {
       scene.setObjects((prev) =>
         prev.map((obj) => {
           if (obj.id !== scene.selectedId) return obj;
-
           const o = obj.object3d;
 
           switch (direction) {
             case "up":
-              if (e.shiftKey) {
-                o.position.y += step; // move UP
-              } else {
-                o.position.z -= step; // forward
-              }
+              e.shiftKey ? (o.position.y += step) : (o.position.z -= step);
               break;
-
             case "down":
-              if (e.shiftKey) {
-                o.position.y -= step; // move DOWN
-              } else {
-                o.position.z += step; // backward
-              }
+              e.shiftKey ? (o.position.y -= step) : (o.position.z += step);
               break;
-
             case "left":
               o.position.x -= step;
               break;
-
             case "right":
               o.position.x += step;
               break;
@@ -221,6 +207,39 @@ export default function EditorPage() {
           />
         </div>
       </div>
+
+      {/* ✅ EXPORT MODAL */}
+      {showExportModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+          <div className="bg-gray-800 p-6 rounded-lg w-96 shadow-xl">
+            <h2 className="text-lg font-semibold mb-4">Export Scene as GLB</h2>
+
+            <input
+              type="text"
+              placeholder="Enter file name"
+              value={exportFilename}
+              onChange={(e) => setExportFilename(e.target.value)}
+              className="w-full p-2 rounded bg-gray-700 text-white mb-4 outline-none"
+            />
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleExportGLB}
+                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500"
+              >
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
