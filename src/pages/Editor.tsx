@@ -1,17 +1,15 @@
 import { useState, Suspense, lazy } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useLocation } from "react-router-dom";
+import * as THREE from "three";
 
-/* ================== UI COMPONENTS ================== */
 import Navbar from "../components/Editor/Navbar";
 import Toolbar from "../components/Editor/Toolbar";
 import PropertiesPanel from "../components/Editor/PropertiesPanel";
 import LightsFromObjects from "../components/Editor/LightsFromObjects";
 
-/* 🔥 Lazy load heavy 3D canvas */
 const EditorCanvas = lazy(() => import("../components/Editor/EditorCanvas"));
 
-/* ================== LIGHTWEIGHT EDITOR CORE ================== */
 import {
   useSceneState,
   useHistory,
@@ -24,8 +22,6 @@ import {
   updateObjectName,
   updateObjectColor,
 } from "../editor";
-
-/* =================================================== */
 
 export default function EditorPage() {
   const location = useLocation();
@@ -40,25 +36,94 @@ export default function EditorPage() {
     gridHeight = Number(location.state.height ?? 2.8);
   }
 
-  /* ---------- Core Scene State ---------- */
   const scene = useSceneState();
   const history = useHistory(scene.objects, scene.setObjects);
 
-  /* ---------- Keyboard Shortcuts ---------- */
+  function clampToRoom(obj: THREE.Object3D) {
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+
+    const halfX = size.x / 2;
+    const halfY = size.y / 2;
+    const halfZ = size.z / 2;
+
+    obj.position.x = THREE.MathUtils.clamp(
+      obj.position.x,
+      -gridWidth / 2 + halfX,
+      gridWidth / 2 - halfX
+    );
+
+    obj.position.y = THREE.MathUtils.clamp(
+      obj.position.y,
+      halfY,
+      gridHeight - halfY
+    );
+
+    obj.position.z = THREE.MathUtils.clamp(
+      obj.position.z,
+      -gridLength / 2 + halfZ,
+      gridLength / 2 - halfZ
+    );
+  }
+
   useKeyboardShortcuts({
     onUndo: history.undo,
     onRedo: history.redo,
+
     onDelete: () => {
       scene.setObjects((prev) => deleteObject(prev, scene.selectedId));
       scene.setSelectedId(null);
     },
+
+    onMoveObject: (direction, e) => {
+      if (!scene.selectedId) return;
+
+      const normalStep = 0.05;
+      const fastStep = 0.2;
+      const step = e.shiftKey ? fastStep : normalStep;
+
+      scene.setObjects((prev) =>
+        prev.map((obj) => {
+          if (obj.id !== scene.selectedId) return obj;
+
+          const o = obj.object3d;
+
+          switch (direction) {
+            case "up":
+              if (e.shiftKey) {
+                o.position.y += step; // move UP
+              } else {
+                o.position.z -= step; // forward
+              }
+              break;
+
+            case "down":
+              if (e.shiftKey) {
+                o.position.y -= step; // move DOWN
+              } else {
+                o.position.z += step; // backward
+              }
+              break;
+
+            case "left":
+              o.position.x -= step;
+              break;
+
+            case "right":
+              o.position.x += step;
+              break;
+          }
+
+          clampToRoom(o);
+          return { ...obj };
+        })
+      );
+    },
   });
 
-  /* ---------- Export Modal ---------- */
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportFilename, setExportFilename] = useState("");
-
-  /* ---------- Lazy Import Handlers ---------- */
 
   const handleFileImport = async (file: File | null) => {
     if (!file) return;
@@ -91,8 +156,6 @@ export default function EditorPage() {
     setExportFilename("");
   };
 
-  /* =================================================== */
-
   return (
     <div className="flex flex-col h-screen bg-gray-700 text-white">
       <Navbar
@@ -120,41 +183,10 @@ export default function EditorPage() {
           onImportFromUrl={handleUrlImport}
         />
 
-        {showExportModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-            <div className="bg-gray-900 rounded-2xl p-8 w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Export GLB</h2>
-              <input
-                value={exportFilename}
-                onChange={(e) => setExportFilename(e.target.value)}
-                className="w-full mb-4 p-2 rounded bg-gray-800"
-                placeholder="filename"
-              />
-              <div className="flex gap-4">
-                <button className="flex-1 bg-blue-600 p-2 rounded" onClick={handleExportGLB}>
-                  Export
-                </button>
-                <button className="flex-1 bg-gray-700 p-2 rounded" onClick={() => setShowExportModal(false)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div
-          className="flex-1 relative"
-          onDrop={(e) => {
-            e.preventDefault();
-            const url = e.dataTransfer.getData("text/plain");
-            if (url) handleUrlImport(url);
-          }}
-          onDragOver={(e) => e.preventDefault()}
-        >
+        <div className="flex-1 relative">
           <Canvas shadows camera={{ position: [gridWidth, gridWidth, gridLength], fov: 50 }}>
             <ambientLight intensity={0.7} />
             <directionalLight position={[10, 10, 5]} intensity={1.5} />
-            <gridHelper args={[gridWidth, gridLength]} />
 
             <Suspense fallback={null}>
               <EditorCanvas
@@ -165,7 +197,6 @@ export default function EditorPage() {
                 gridLength={gridLength}
                 gridHeight={gridHeight}
                 hasRoom={scene.objects.some((o) => o.name === "Room")}
-                initialFocusId={scene.objects.length === 1 ? scene.objects[0].id : undefined}
               />
             </Suspense>
 

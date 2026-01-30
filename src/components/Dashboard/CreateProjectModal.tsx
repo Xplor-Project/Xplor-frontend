@@ -116,7 +116,7 @@ export default function CreateProjectModal({
                 <input
                   name="height"
                   type="number"
-                  defaultValue={2.8}
+                  defaultValue={49.99}
                   step="0.1"
                   className="w-full px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg"
                 />
