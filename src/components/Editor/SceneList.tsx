@@ -1,4 +1,3 @@
-
 import type { SceneObject } from "../../types/scene";
 
 type SceneListProps = {
@@ -25,7 +24,6 @@ export default function SceneList({
           onClick={() => onSelect(o.id)}
         >
           <div className="font-medium">{o.name}</div>
-          <div className="text-xs text-gray-500">id: {o.id}</div>
         </div>
       ))}
     </div>

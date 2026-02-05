@@ -1,10 +1,11 @@
-import { useState, Suspense, lazy } from "react";
+import { useState, Suspense, lazy, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useLocation } from "react-router-dom";
 import * as THREE from "three";
 
 import Navbar from "../components/Editor/Navbar";
 import Toolbar from "../components/Editor/Toolbar";
+import SceneList from "../components/Editor/SceneList";
 import PropertiesPanel from "../components/Editor/PropertiesPanel";
 import LightsFromObjects from "../components/Editor/LightsFromObjects";
 
@@ -22,9 +23,15 @@ import {
   updateObjectName,
   updateObjectColor,
 } from "../editor";
+import {
+  updateLightIntensity,
+  updateLightColor,
+} from "../editor/lights/updateLight";
+import type { SceneObject } from "../types/scene";
 
 export default function EditorPage() {
   const location = useLocation();
+  const clipboardRef = useRef<SceneObject | null>(null);
 
   let gridWidth = 10;
   let gridLength = 10;
@@ -32,7 +39,9 @@ export default function EditorPage() {
 
   if (location.state) {
     gridWidth = Number(location.state.gridWidth ?? location.state.width ?? 10);
-    gridLength = Number(location.state.gridLength ?? location.state.length ?? 10);
+    gridLength = Number(
+      location.state.gridLength ?? location.state.length ?? 10,
+    );
     gridHeight = Number(location.state.height ?? 2.8);
   }
 
@@ -51,21 +60,52 @@ export default function EditorPage() {
     obj.position.x = THREE.MathUtils.clamp(
       obj.position.x,
       -gridWidth / 2 + halfX,
-      gridWidth / 2 - halfX
+      gridWidth / 2 - halfX,
     );
 
     obj.position.y = THREE.MathUtils.clamp(
       obj.position.y,
       halfY,
-      gridHeight - halfY
+      gridHeight - halfY,
     );
 
     obj.position.z = THREE.MathUtils.clamp(
       obj.position.z,
       -gridLength / 2 + halfZ,
-      gridLength / 2 - halfZ
+      gridLength / 2 - halfZ,
     );
   }
+
+  const handleCopy = () => {
+    if (!scene.selectedId) return;
+    const selectedObject = scene.objects.find(
+      (obj) => obj.id === scene.selectedId,
+    );
+    if (selectedObject) {
+      clipboardRef.current = selectedObject;
+    }
+  };
+
+  const handlePaste = () => {
+    if (!clipboardRef.current) return;
+
+    const clonedObject3d = clipboardRef.current.object3d.clone(true);
+
+    // Offset the pasted object slightly so it's not in the exact same position
+    clonedObject3d.position.x += 0.5;
+    clonedObject3d.position.z += 0.5;
+    clampToRoom(clonedObject3d);
+
+    const pastedObject: SceneObject = {
+      id: crypto.randomUUID(),
+      name: clipboardRef.current.name,
+      object3d: clonedObject3d,
+      animations: clipboardRef.current.animations?.map((a) => a.clone()),
+    };
+
+    scene.setObjects((prev) => [...prev, pastedObject]);
+    scene.setSelectedId(pastedObject.id);
+  };
 
   useKeyboardShortcuts({
     onUndo: history.undo,
@@ -74,6 +114,8 @@ export default function EditorPage() {
       scene.setObjects((prev) => deleteObject(prev, scene.selectedId));
       scene.setSelectedId(null);
     },
+    onCopy: handleCopy,
+    onPaste: handlePaste,
     onMoveObject: (direction, e) => {
       if (!scene.selectedId) return;
 
@@ -103,7 +145,7 @@ export default function EditorPage() {
 
           clampToRoom(o);
           return { ...obj };
-        })
+        }),
       );
     },
   });
@@ -155,8 +197,12 @@ export default function EditorPage() {
       <div className="flex flex-1 min-h-0">
         <Toolbar
           addCube={() => scene.setObjects((prev) => [...prev, createCube()])}
-          addSphere={() => scene.setObjects((prev) => [...prev, createSphere()])}
-          addLight={() => scene.setObjects((prev) => [...prev, createSceneLight()])}
+          addSphere={() =>
+            scene.setObjects((prev) => [...prev, createSphere()])
+          }
+          addLight={() =>
+            scene.setObjects((prev) => [...prev, createSceneLight()])
+          }
           handleFile={handleFileImport}
           deleteSelected={() => {
             scene.setObjects((prev) => deleteObject(prev, scene.selectedId));
@@ -170,7 +216,10 @@ export default function EditorPage() {
         />
 
         <div className="flex-1 relative">
-          <Canvas shadows camera={{ position: [gridWidth, gridWidth, gridLength], fov: 50 }}>
+          <Canvas
+            shadows
+            camera={{ position: [gridWidth, gridWidth, gridLength], fov: 50 }}
+          >
             <ambientLight intensity={0.7} />
             <directionalLight position={[10, 10, 5]} intensity={1.5} />
 
@@ -191,17 +240,33 @@ export default function EditorPage() {
         </div>
 
         <div className="w-80 bg-gray-900 p-4 overflow-y-auto">
+          <SceneList
+            objects={scene.objects}
+            selectedId={scene.selectedId}
+            onSelect={scene.setSelectedId}
+          />
+
           <PropertiesPanel
             objects={scene.objects}
             selectedId={scene.selectedId}
             updateTransform={(id, field, axis, value) =>
-              scene.setObjects((prev) => updateTransform(prev, id, field, axis, value))
+              scene.setObjects((prev) =>
+                updateTransform(prev, id, field, axis, value),
+              )
             }
             updateObjectName={(id, name) =>
               scene.setObjects((prev) => updateObjectName(prev, id, name))
             }
             updateObjectColor={(id, color) =>
               scene.setObjects((prev) => updateObjectColor(prev, id, color))
+            }
+            updateLightIntensity={(id, intensity) =>
+              scene.setObjects((prev) =>
+                updateLightIntensity(prev, id, intensity),
+              )
+            }
+            updateLightColor={(id, color) =>
+              scene.setObjects((prev) => updateLightColor(prev, id, color))
             }
             updateObjectTexture={handleTextureUpdate}
           />

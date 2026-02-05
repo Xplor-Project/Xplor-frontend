@@ -13,7 +13,7 @@ type PropertiesPanelProps = {
     id: string,
     field: TransformField,
     axis: TransformAxis,
-    value: number
+    value: number,
   ) => void;
   updateObjectName?: (id: string, name: string) => void;
   updateObjectColor?: (id: string, colorHex: string) => void;
@@ -71,8 +71,7 @@ export default function PropertiesPanel({
     return "#" + (hex || 0xffffff).toString(16).padStart(6, "0");
   };
 
-  const isLight =
-    selectedObject?.object3d?.userData?.isLight === true;
+  const isLight = selectedObject?.object3d?.userData?.isLight === true;
 
   return (
     <div
@@ -93,9 +92,7 @@ export default function PropertiesPanel({
             <input
               type="text"
               value={selectedObject.name}
-              onChange={(e) =>
-                updateObjectName?.(selectedId!, e.target.value)
-              }
+              onChange={(e) => updateObjectName?.(selectedId!, e.target.value)}
               className="w-full p-2 bg-gray-700 border-gray-600 rounded text-white"
             />
           </div>
@@ -162,14 +159,14 @@ export default function PropertiesPanel({
                     type="number"
                     step={0.1}
                     value={Number(
-                      selectedObject.object3d.position[axis]
+                      selectedObject.object3d.position[axis],
                     ).toFixed(2)}
                     onChange={(e) =>
                       updateTransform(
                         selectedId!,
                         "position",
                         axis,
-                        parseFloat(e.target.value) || 0
+                        parseFloat(e.target.value) || 0,
                       )
                     }
                     className="w-full pl-6 bg-gray-700 border-gray-600 rounded text-white text-right"
@@ -193,8 +190,8 @@ export default function PropertiesPanel({
                     selectedId!,
                     "scale",
                     axis as TransformAxis,
-                    parseFloat(e.target.value) || 1
-                  )
+                    parseFloat(e.target.value) || 1,
+                  ),
                 )
               }
               className="w-full p-2 bg-gray-700 border-gray-600 rounded text-white mb-2"
@@ -212,8 +209,8 @@ export default function PropertiesPanel({
                     selectedId!,
                     "scale",
                     axis as TransformAxis,
-                    parseFloat(e.target.value)
-                  )
+                    parseFloat(e.target.value),
+                  ),
                 )
               }
               className="w-full accent-green-500 cursor-pointer"
@@ -226,7 +223,9 @@ export default function PropertiesPanel({
               <h4 className="text-sm text-gray-200 mb-3">Light Settings</h4>
 
               {/* INTENSITY */}
-              <label className="text-xs text-gray-300">Intensity</label>
+              <label className="text-xs text-gray-300 block mb-2">
+                Intensity
+              </label>
               <div className="flex items-center space-x-3 mb-4">
                 <input
                   type="range"
@@ -237,24 +236,24 @@ export default function PropertiesPanel({
                   onChange={(e) =>
                     updateLightIntensity?.(
                       selectedId!,
-                      parseFloat(e.target.value)
+                      parseFloat(e.target.value),
                     )
                   }
-                  className="flex-1 cursor-pointer"
+                  className="flex-1 cursor-pointer accent-blue-500"
                 />
                 <input
                   type="number"
-                  step={0.1}
+                  step="0.1"
                   min="0"
-                  max="100"
-                  value={getCurrentIntensity()}
+                  max="10"
+                  value={parseFloat(getCurrentIntensity().toFixed(1))}
                   onChange={(e) =>
                     updateLightIntensity?.(
                       selectedId!,
-                      parseFloat(e.target.value)
+                      parseFloat(e.target.value) || 0,
                     )
                   }
-                  className="w-20 p-1 bg-gray-700 border-gray-600 rounded text-white text-right"
+                  className="w-16 p-2 bg-gray-700 border border-gray-600 rounded text-white text-right"
                 />
               </div>
 
@@ -267,7 +266,7 @@ export default function PropertiesPanel({
                   onChange={(e) =>
                     updateLightColor?.(
                       selectedId!,
-                      new THREE.Color(e.target.value).getHex()
+                      new THREE.Color(e.target.value).getHex(),
                     )
                   }
                   className="w-12 h-8 cursor-pointer"
